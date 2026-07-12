@@ -3,6 +3,7 @@ import db from '../../shared/database.js';
 import { verifyPassword } from '../../shared/auth-utils.js';
 import { generateToken } from '../../shared/token-utils.js';
 import dotenv from 'dotenv';
+import { hashPassword } from '../../shared/auth-utils.js';
 
 dotenv.config();
 
@@ -163,6 +164,56 @@ router.post('/login', (req, res) => {
 
 router.post('/logout', (req, res) => {
   res.status(200).json({ success: true });
+});
+
+router.post('/signup', async (req, res) => {
+  const { name, email, password, role } = req.body;
+
+  if (!name || !email || !password || !role) {
+    return res.status(400).json({
+      error: { code: 'BAD_REQUEST', message: 'Name, email, password, and role are required.' }
+    });
+  }
+
+  try {
+    // Check if user already exists
+    db.get('SELECT user_id FROM users WHERE email = ?', [email], async (err, existingUser) => {
+      if (err) return res.status(500).json({ error: { code: 'INTERNAL_SERVER_ERROR', message: 'Database error.' } });
+      if (existingUser) {
+        return res.status(409).json({ error: { code: 'CONFLICT', message: 'Email already in use.' } });
+      }
+
+      // Get role_id
+      db.get('SELECT role_id, name FROM roles WHERE name = ?', [role], async (err, roleRow) => {
+        if (err) return res.status(500).json({ error: { code: 'INTERNAL_SERVER_ERROR', message: 'Database error.' } });
+        if (!roleRow) {
+          return res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'Invalid role.' } });
+        }
+
+        const hashed = await hashPassword(password);
+
+        db.run(
+          'INSERT INTO users (name, email, password_hash, role_id) VALUES (?, ?, ?, ?)',
+          [name, email, hashed, roleRow.role_id],
+          function (err) {
+            if (err) return res.status(500).json({ error: { code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create user.' } });
+            
+            const tokenPayload = {
+              user_id: this.lastID,
+              name: name,
+              email: email,
+              role: roleRow.name
+            };
+            const token = generateToken(tokenPayload, SESSION_EXPIRY_HOURS);
+
+            return res.status(201).json({ token, user: tokenPayload });
+          }
+        );
+      });
+    });
+  } catch (error) {
+    return res.status(500).json({ error: { code: 'INTERNAL_SERVER_ERROR', message: 'An error occurred during signup.' } });
+  }
 });
 
 export default router;

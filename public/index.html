@@ -727,6 +727,10 @@
             <div id="auth-error" class="auth-error"></div>
 
             <form id="login-form">
+                <div class="form-group" id="signup-name-group" style="display: none;">
+                    <label for="login-name">Full Name</label>
+                    <input type="text" id="login-name" class="form-input" placeholder="John Doe">
+                </div>
                 <div class="form-group">
                     <label for="login-email">Email Address</label>
                     <input type="email" id="login-email" class="form-input" required placeholder="name@transitops.in">
@@ -745,7 +749,10 @@
                         <option value="Financial Analyst">Financial Analyst</option>
                     </select>
                 </div>
-                <button type="submit" class="glow-btn" style="width: 100%; margin-top: 10px;">Sign In</button>
+                <button type="submit" id="auth-submit-btn" class="glow-btn" style="width: 100%; margin-top: 10px;">Sign In</button>
+                <div style="text-align: center; margin-top: 15px;">
+                    <a href="#" onclick="toggleAuthMode(event)" id="toggle-auth-mode" style="color: var(--primary); font-size: 13px; text-decoration: none;">Need an account? Sign Up</a>
+                </div>
             </form>
         </div>
     </div>
@@ -1407,29 +1414,60 @@
         }
 
         // Handle Login Submission
+        let isSignUpMode = false;
+        
+        function toggleAuthMode(e) {
+            e.preventDefault();
+            isSignUpMode = !isSignUpMode;
+            
+            const nameGroup = document.getElementById('signup-name-group');
+            const nameInput = document.getElementById('login-name');
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const toggleLink = document.getElementById('toggle-auth-mode');
+            const subtitle = document.querySelector('.auth-subtitle');
+            
+            if (isSignUpMode) {
+                nameGroup.style.display = 'block';
+                nameInput.required = true;
+                submitBtn.innerText = 'Sign Up';
+                toggleLink.innerText = 'Already have an account? Sign In';
+                subtitle.innerText = 'Create your Smart Transport Operations account';
+            } else {
+                nameGroup.style.display = 'none';
+                nameInput.required = false;
+                submitBtn.innerText = 'Sign In';
+                toggleLink.innerText = 'Need an account? Sign Up';
+                subtitle.innerText = 'Sign in to Smart Transport Operations';
+            }
+        }
+
         async function handleLogin(e) {
             e.preventDefault();
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
             const role = document.getElementById('login-role').value;
+            const name = document.getElementById('login-name') ? document.getElementById('login-name').value : '';
             const errorDiv = document.getElementById('auth-error');
 
             errorDiv.style.display = 'none';
 
             try {
-                const res = await apiRequest('/auth/login', {
+                const endpoint = isSignUpMode ? '/auth/signup' : '/auth/login';
+                const body = isSignUpMode ? { name, email, password, role } : { email, password, role };
+                
+                const res = await apiRequest(endpoint, {
                     method: 'POST',
-                    body: JSON.stringify({ email, password, role })
+                    body: JSON.stringify(body)
                 });
 
                 localStorage.setItem('token', res.token);
                 localStorage.setItem('user', JSON.stringify(res.user));
                 currentUser = res.user;
 
-                showToast(`Welcome back, ${currentUser.name}!`);
+                showToast(`Welcome ${isSignUpMode ? '' : 'back, '}${currentUser.name}!`);
                 showAppScreen();
             } catch (err) {
-                errorDiv.innerText = err.message || 'Login failed';
+                errorDiv.innerText = err.message || (isSignUpMode ? 'Signup failed' : 'Login failed');
                 errorDiv.style.display = 'block';
             }
         }
