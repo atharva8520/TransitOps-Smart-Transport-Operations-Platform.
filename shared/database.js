@@ -229,24 +229,24 @@ function seedRolePermissions() {
         const permissions = [
           // Fleet Manager
           { role: 'Fleet Manager', module: 'Fleet', access: 'Edit' },
-          { role: 'Fleet Manager', module: 'Drivers', access: 'None' },
+          { role: 'Fleet Manager', module: 'Drivers', access: 'Edit' },
           { role: 'Fleet Manager', module: 'Trips', access: 'None' },
           { role: 'Fleet Manager', module: 'Fuel/Exp', access: 'None' },
-          { role: 'Fleet Manager', module: 'Analytics', access: 'None' },
+          { role: 'Fleet Manager', module: 'Analytics', access: 'Edit' },
           { role: 'Fleet Manager', module: 'Settings', access: 'Edit' },
           
           // Dispatcher
           { role: 'Dispatcher', module: 'Fleet', access: 'View' },
-          { role: 'Dispatcher', module: 'Drivers', access: 'View' },
+          { role: 'Dispatcher', module: 'Drivers', access: 'None' },
           { role: 'Dispatcher', module: 'Trips', access: 'Edit' },
           { role: 'Dispatcher', module: 'Fuel/Exp', access: 'None' },
-          { role: 'Dispatcher', module: 'Analytics', access: 'View' },
+          { role: 'Dispatcher', module: 'Analytics', access: 'None' },
           { role: 'Dispatcher', module: 'Settings', access: 'None' },
           
           // Safety Officer
           { role: 'Safety Officer', module: 'Fleet', access: 'None' },
           { role: 'Safety Officer', module: 'Drivers', access: 'Edit' },
-          { role: 'Safety Officer', module: 'Trips', access: 'None' },
+          { role: 'Safety Officer', module: 'Trips', access: 'View' },
           { role: 'Safety Officer', module: 'Fuel/Exp', access: 'None' },
           { role: 'Safety Officer', module: 'Analytics', access: 'None' },
           { role: 'Safety Officer', module: 'Settings', access: 'None' },

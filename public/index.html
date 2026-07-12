@@ -1352,13 +1352,13 @@
             // Define visible tabs per role
             let visibleTabs = ['dashboard'];
             if (role === 'Fleet Manager') {
-                visibleTabs = ['dashboard', 'maint', 'settings'];
+                visibleTabs = ['dashboard', 'maint', 'analytics', 'settings'];
             } else if (role === 'Dispatcher') {
-                visibleTabs = ['dashboard', 'trips', 'maint']; // View access to Maintenance
+                visibleTabs = ['dashboard', 'trips', 'maint']; // View access to Fleet
             } else if (role === 'Financial Analyst') {
-                visibleTabs = ['dashboard', 'expenses', 'analytics'];
+                visibleTabs = ['dashboard', 'maint', 'expenses', 'analytics']; // View access to Fleet
             } else if (role === 'Safety Officer') {
-                visibleTabs = ['dashboard']; // Safety module CRUD is Unit 5 placeholder
+                visibleTabs = ['dashboard', 'trips']; // View access to Trips
             }
 
             allTabs.forEach(tab => {
@@ -1501,8 +1501,9 @@
             if (tab === 'dashboard') {
                 document.getElementById('dashboard-view').style.display = 'block';
                 loadDashboard();
-            } else if (tab === 'trips' && role === 'Dispatcher') {
-                document.getElementById('btn-new-trip').style.display = 'block';
+            } else if (tab === 'trips' && (role === 'Dispatcher' || role === 'Safety Officer')) {
+                const hasEdit = role === 'Dispatcher';
+                document.getElementById('btn-new-trip').style.display = hasEdit ? 'block' : 'none';
                 document.getElementById('trips-view').style.display = 'block';
                 loadTrips();
             } else if (tab === 'maint') {
@@ -1513,7 +1514,7 @@
             } else if (tab === 'expenses' && role === 'Financial Analyst') {
                 document.getElementById('expenses-view').style.display = 'block';
                 loadFuelExpensesTab();
-            } else if (tab === 'analytics' && role === 'Financial Analyst') {
+            } else if (tab === 'analytics' && (role === 'Financial Analyst' || role === 'Fleet Manager')) {
                 document.getElementById('analytics-view').style.display = 'block';
                 loadAnalytics();
             } else if (tab === 'settings' && role === 'Fleet Manager') {
