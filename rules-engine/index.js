@@ -84,7 +84,7 @@ export class RulesEngine {
     });
   }
 
-  async completeTrip(tripId, finalOdometer, fuelConsumed) {
+  async completeTrip(tripId, finalOdometer, fuelConsumed, revenueAmount = null) {
     return new Promise(async (resolve, reject) => {
       this.db.serialize(async () => {
         try {
@@ -115,8 +115,8 @@ export class RulesEngine {
           // 4. Execute atomic updates
           await this.run('BEGIN TRANSACTION');
           await this.run(
-            "UPDATE trips SET status = 'Completed', final_odometer_km = ?, fuel_consumed_l = ?, updated_at = CURRENT_TIMESTAMP WHERE trip_id = ?",
-            [finalOdometer, fuelConsumed, tripId]
+            "UPDATE trips SET status = 'Completed', final_odometer_km = ?, fuel_consumed_l = ?, revenue_amount = ?, updated_at = CURRENT_TIMESTAMP WHERE trip_id = ?",
+            [finalOdometer, fuelConsumed, revenueAmount, tripId]
           );
           await this.run(
             "UPDATE vehicles SET status = 'Available', odometer_km = ?, updated_at = CURRENT_TIMESTAMP WHERE vehicle_id = ?",
@@ -258,5 +258,22 @@ export class RulesEngine {
         }
       });
     });
+  }
+
+  async transition(type, entityIds, extraData = {}) {
+    switch (type) {
+      case 'dispatch':
+        return this.dispatchTrip(entityIds.tripId);
+      case 'complete':
+        return this.completeTrip(entityIds.tripId, extraData.finalOdometer, extraData.fuelConsumed, extraData.revenueAmount);
+      case 'cancel':
+        return this.cancelTrip(entityIds.tripId);
+      case 'maintenance_open':
+        return this.openMaintenance(entityIds.vehicleId, extraData.serviceType, extraData.cost, extraData.serviceDate);
+      case 'maintenance_close':
+        return this.closeMaintenance(entityIds.maintenanceId);
+      default:
+        throw new Error(`INVALID_TRANSITION: Unknown transition type ${type}`);
+    }
   }
 }

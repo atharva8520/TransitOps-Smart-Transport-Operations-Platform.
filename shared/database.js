@@ -110,6 +110,7 @@ function initializeDatabase() {
         final_odometer_km REAL,
         fuel_consumed_l REAL,
         eta_minutes INTEGER,
+        revenue_amount REAL,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (vehicle_id) REFERENCES vehicles (vehicle_id),
@@ -155,7 +156,6 @@ function initializeDatabase() {
         toll_cost REAL DEFAULT 0 NOT NULL,
         other_cost REAL DEFAULT 0 NOT NULL,
         maintenance_linked INTEGER DEFAULT 0 NOT NULL,
-        total_cost REAL NOT NULL,
         FOREIGN KEY (trip_id) REFERENCES trips (trip_id),
         FOREIGN KEY (vehicle_id) REFERENCES vehicles (vehicle_id)
       );
