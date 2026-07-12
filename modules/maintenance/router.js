@@ -1,6 +1,7 @@
 import express from 'express';
 import db from '../../shared/database.js';
 import { authenticateToken, authorizeModule } from '../../shared/auth-middleware.js';
+import { validators } from '../../shared/validation-middleware.js';
 import { RulesEngine } from '../../rules-engine/index.js';
 
 const router = express.Router();
@@ -37,7 +38,7 @@ function handleRulesEngineError(err, res) {
 }
 
 // GET /api/v1/maintenance
-router.get('/', authenticateToken, authorizeModule('Fleet', 'View'), (req, res) => {
+router.get('/', authenticateToken, authorizeModule('Fleet', 'View'), validators.filterById, (req, res) => {
   const { vehicle_id, record_status } = req.query;
   let sql = `
     SELECT m.*, v.name as vehicle_name, v.registration_no as vehicle_registration 
@@ -77,17 +78,8 @@ router.get('/', authenticateToken, authorizeModule('Fleet', 'View'), (req, res) 
 });
 
 // POST /api/v1/maintenance (Open record)
-router.post('/', authenticateToken, authorizeModule('Fleet', 'Edit'), async (req, res) => {
+router.post('/', authenticateToken, authorizeModule('Fleet', 'Edit'), ...validators.createMaintenance, async (req, res) => {
   const { vehicle_id, service_type, cost, service_date } = req.body;
-
-  if (!vehicle_id || !service_type || cost === undefined || !service_date) {
-    return res.status(400).json({
-      error: {
-        code: 'BAD_REQUEST',
-        message: 'All fields (vehicle_id, service_type, cost, service_date) are required.'
-      }
-    });
-  }
 
   try {
     const result = await rulesEngine.transition(

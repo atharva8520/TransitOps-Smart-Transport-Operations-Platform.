@@ -1,6 +1,7 @@
 import express from 'express';
 import db from '../../shared/database.js';
 import { authenticateToken } from '../../shared/auth-middleware.js';
+import { validators, validationRules, handleValidationErrors } from '../../shared/validation-middleware.js';
 
 const router = express.Router();
 
@@ -31,14 +32,8 @@ router.get('/', authenticateToken, requireFleetManager, (req, res) => {
 });
 
 // PUT /api/v1/settings
-router.put('/', authenticateToken, requireFleetManager, (req, res) => {
+router.put('/', authenticateToken, requireFleetManager, ...validators.updateSettings, (req, res) => {
   const { depot_name, currency, distance_unit } = req.body;
-
-  if (!depot_name || !currency || !distance_unit) {
-    return res.status(400).json({
-      error: { code: 'BAD_REQUEST', message: 'depot_name, currency, and distance_unit are required.' }
-    });
-  }
 
   db.get('SELECT setting_id FROM settings LIMIT 1', [], (err, row) => {
     if (err) {

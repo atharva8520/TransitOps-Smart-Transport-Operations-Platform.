@@ -1,6 +1,7 @@
 import express from 'express';
 import db from '../../shared/database.js';
 import { authenticateToken, authorizeModule } from '../../shared/auth-middleware.js';
+import { validators } from '../../shared/validation-middleware.js';
 
 const router = express.Router();
 
@@ -24,23 +25,11 @@ router.get('/fuel-logs', authenticateToken, authorizeModule('Fuel/Exp', 'View'),
 });
 
 // POST /api/v1/fuel-expenses/fuel-logs
-router.post('/fuel-logs', authenticateToken, authorizeModule('Fuel/Exp', 'Edit'), (req, res) => {
+router.post('/fuel-logs', authenticateToken, authorizeModule('Fuel/Exp', 'Edit'), ...validators.createFuelLog, (req, res) => {
   const { vehicle_id, trip_id, log_date, liters, fuel_cost } = req.body;
-
-  if (!vehicle_id || !log_date || liters === undefined || fuel_cost === undefined) {
-    return res.status(400).json({
-      error: { code: 'BAD_REQUEST', message: 'vehicle_id, log_date, liters, and fuel_cost are required.' }
-    });
-  }
 
   const numLiters = parseFloat(liters);
   const numFuelCost = parseFloat(fuel_cost);
-
-  if (isNaN(numLiters) || numLiters <= 0 || isNaN(numFuelCost) || numFuelCost <= 0) {
-    return res.status(400).json({
-      error: { code: 'INVALID_INPUT', message: 'Liters and fuel cost must be numeric and greater than zero.' }
-    });
-  }
 
   // Validate vehicle exists
   db.get('SELECT * FROM vehicles WHERE vehicle_id = ?', [vehicle_id], (err, vehicle) => {
@@ -91,24 +80,12 @@ router.get('/expenses', authenticateToken, authorizeModule('Fuel/Exp', 'View'), 
 });
 
 // POST /api/v1/fuel-expenses/expenses
-router.post('/expenses', authenticateToken, authorizeModule('Fuel/Exp', 'Edit'), (req, res) => {
+router.post('/expenses', authenticateToken, authorizeModule('Fuel/Exp', 'Edit'), ...validators.createExpense, (req, res) => {
   const { vehicle_id, trip_id, toll_cost, other_cost, maintenance_linked } = req.body;
-
-  if (!vehicle_id) {
-    return res.status(400).json({
-      error: { code: 'BAD_REQUEST', message: 'vehicle_id is required.' }
-    });
-  }
 
   const numToll = toll_cost !== undefined ? parseFloat(toll_cost) : 0;
   const numOther = other_cost !== undefined ? parseFloat(other_cost) : 0;
   const isMaintLinked = maintenance_linked ? 1 : 0;
-
-  if (isNaN(numToll) || numToll < 0 || isNaN(numOther) || numOther < 0) {
-    return res.status(400).json({
-      error: { code: 'INVALID_INPUT', message: 'Costs must be positive numbers.' }
-    });
-  }
 
   db.get('SELECT * FROM vehicles WHERE vehicle_id = ?', [vehicle_id], (err, vehicle) => {
     if (err) {

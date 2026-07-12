@@ -1,10 +1,11 @@
 import express from 'express';
 import db from '../../shared/database.js';
 import { authenticateToken, authorizeModule } from '../../shared/auth-middleware.js';
+import { validators, validationRules } from '../../shared/validation-middleware.js';
 
 const router = express.Router();
 
-router.get('/', authenticateToken, authorizeModule('Fleet', 'View'), (req, res) => {
+router.get('/', authenticateToken, authorizeModule('Fleet', 'View'), validators.filterByStatus, (req, res) => {
   const { status } = req.query;
   let sql = 'SELECT * FROM vehicles';
   const params = [];

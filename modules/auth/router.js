@@ -2,6 +2,7 @@ import express from 'express';
 import db from '../../shared/database.js';
 import { verifyPassword } from '../../shared/auth-utils.js';
 import { generateToken } from '../../shared/token-utils.js';
+import { validators } from '../../shared/validation-middleware.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -10,18 +11,8 @@ const router = express.Router();
 const LOCKOUT_COOLDOWN_MINUTES = parseInt(process.env.LOCKOUT_COOLDOWN_MINUTES || '15', 10);
 const SESSION_EXPIRY_HOURS = parseInt(process.env.SESSION_EXPIRY_HOURS || '24', 10);
 
-router.post('/login', (req, res) => {
+router.post('/login', ...validators.login, (req, res) => {
   const { email, password, role } = req.body;
-
-  // 1. Validation
-  if (!email || !password || !role) {
-    return res.status(400).json({
-      error: {
-        code: 'BAD_REQUEST',
-        message: 'Email, password, and role are required.'
-      }
-    });
-  }
 
   // Helper to handle bad credentials response and increment failed count
   const failLogin = (userId, currentFailedCount) => {

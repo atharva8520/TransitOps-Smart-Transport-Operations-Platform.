@@ -1,6 +1,7 @@
 import express from 'express';
 import db from '../../shared/database.js';
 import { authenticateToken, authorizeModule } from '../../shared/auth-middleware.js';
+import { validationRules, handleValidationErrors } from '../../shared/validation-middleware.js';
 
 const router = express.Router();
 
@@ -24,7 +25,14 @@ function queryAll(sql, params = []) {
 }
 
 // GET /api/v1/reports/dashboard
-router.get('/dashboard', authenticateToken, authorizeModule('Analytics', 'View'), async (req, res) => {
+router.get('/dashboard', 
+  authenticateToken, 
+  authorizeModule('Analytics', 'View'),
+  validationRules.queryString('type', 50),
+  validationRules.queryString('status', 50),
+  validationRules.queryString('region', 100),
+  handleValidationErrors,
+  async (req, res) => {
   const { type, status, region } = req.query;
 
   try {

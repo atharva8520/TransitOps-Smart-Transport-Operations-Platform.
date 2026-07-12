@@ -1,6 +1,7 @@
 import express from 'express';
 import db from '../../shared/database.js';
 import { authenticateToken, authorizeModule } from '../../shared/auth-middleware.js';
+import { validators, validationRules } from '../../shared/validation-middleware.js';
 import { RulesEngine } from '../../rules-engine/index.js';
 
 const router = express.Router();
@@ -37,7 +38,7 @@ function handleRulesEngineError(err, res) {
 }
 
 // GET /api/v1/trips
-router.get('/', authenticateToken, authorizeModule('Trips', 'View'), (req, res) => {
+router.get('/', authenticateToken, authorizeModule('Trips', 'View'), validators.filterById, (req, res) => {
   const { status, vehicle_id, driver_id } = req.query;
   let sql = `
     SELECT t.*, v.name as vehicle_name, v.registration_no as vehicle_registration, d.name as driver_name 
@@ -82,18 +83,8 @@ router.get('/', authenticateToken, authorizeModule('Trips', 'View'), (req, res) 
 });
 
 // POST /api/v1/trips (Draft only)
-router.post('/', authenticateToken, authorizeModule('Trips', 'Edit'), (req, res) => {
+router.post('/', authenticateToken, authorizeModule('Trips', 'Edit'), ...validators.createTrip, (req, res) => {
   const { source, destination, vehicle_id, driver_id, cargo_weight_kg, planned_distance_km } = req.body;
-
-  // 1. Basic validation
-  if (!source || !destination || !vehicle_id || !driver_id || cargo_weight_kg === undefined || planned_distance_km === undefined) {
-    return res.status(400).json({
-      error: {
-        code: 'BAD_REQUEST',
-        message: 'All fields (source, destination, vehicle_id, driver_id, cargo_weight_kg, planned_distance_km) are required.'
-      }
-    });
-  }
 
   // 2. Fetch Vehicle and check details
   db.get('SELECT * FROM vehicles WHERE vehicle_id = ?', [vehicle_id], (err, vehicle) => {
@@ -188,18 +179,9 @@ router.post('/:id/dispatch', authenticateToken, authorizeModule('Trips', 'Edit')
 });
 
 // POST /api/v1/trips/:id/complete
-router.post('/:id/complete', authenticateToken, authorizeModule('Trips', 'Edit'), async (req, res) => {
+router.post('/:id/complete', authenticateToken, authorizeModule('Trips', 'Edit'), ...validators.completeTrip, async (req, res) => {
   const tripId = parseInt(req.params.id, 10);
   const { final_odometer_km, fuel_consumed_l, revenue_amount } = req.body;
-
-  if (final_odometer_km === undefined || fuel_consumed_l === undefined) {
-    return res.status(400).json({
-      error: {
-        code: 'BAD_REQUEST',
-        message: 'final_odometer_km and fuel_consumed_l are required to complete a trip.'
-      }
-    });
-  }
 
   try {
     const revenueAmount = revenue_amount !== undefined && revenue_amount !== null && revenue_amount !== '' ? parseFloat(revenue_amount) : null;
